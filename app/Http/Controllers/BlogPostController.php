@@ -48,6 +48,7 @@ class BlogPostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
+    // PUT in laravel using POST with suffix ?_method=PUT
     public function update(Request $request, $id)
     {
         $blogPost = BlogPost::find($id);
@@ -58,8 +59,8 @@ class BlogPostController extends Controller
 
         // Validate the incoming request
         $validatedData = $request->validate([
-            'title' => 'sometimes|string|max:255',
-            'content' => 'sometimes',
+            'title' => 'required|string|max:255',
+            'content' => 'required',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048', // Validate image
         ]);
 

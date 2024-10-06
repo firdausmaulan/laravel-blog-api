@@ -94,6 +94,7 @@ class AuthController extends Controller
     }
 
     // Update user profile
+    // PUT in laravel using POST with suffix ?_method=PUT
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
@@ -105,10 +106,10 @@ class AuthController extends Controller
 
         // Validate the request data
         $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'sometimes|required|string|min:8|confirmed',
-            'role' => 'sometimes|required|string|in:user,admin',
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'sometimes|string|min:8|confirmed',
+            'role' => 'sometimes|string|in:user,admin',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'address' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
