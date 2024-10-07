@@ -1,7 +1,12 @@
-What I learn from this project
-- https://firdausmaulana.blogspot.com/2024/10/laravel-blog.html
+# What I learn from this project
 
-#Result
+https://firdausmaulana.blogspot.com/2024/10/laravel-blog.html
+
+# Note :
+- I forgot to change some response message
+- Use POST with suffix ?_method=PUT when updating data
+
+# Result
 
 <img src="https://raw.githubusercontent.com/firdausmaulan/laravel-blog-api/refs/heads/main/screenshoot/Screenshot_2024-10-07_17-04-10.png" width="600">
 
