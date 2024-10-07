@@ -27,7 +27,7 @@ class BlogPostController extends Controller
 
         // If validation fails, return error response
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->validationErrorResponse($validator);
         }
 
         // Handle image upload
@@ -44,7 +44,11 @@ class BlogPostController extends Controller
         $blogPost->user_id = Auth::id(); // Associate blog post with the authenticated user
         $blogPost->save();
 
-        return response()->json($blogPost, 201); // Return the newly created blog post
+        return response()->json([
+            'statusCode' => 201,
+            'message' => 'Blog Post Successfully Created',
+            'data' => $blogPost
+        ], 201); // Return the newly created blog post with consistent format
     }
 
     /**
@@ -59,7 +63,10 @@ class BlogPostController extends Controller
         $blogPost = BlogPost::find($id);
 
         if (!$blogPost) {
-            return response()->json(['error' => 'Blog post not found'], 404);
+            return response()->json([
+                'statusCode' => 404,
+                'message' => 'Blog post not found',
+            ], 404);
         }
 
         // Validate the incoming request using Validator::make
@@ -71,7 +78,7 @@ class BlogPostController extends Controller
 
         // If validation fails, return error response
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->validationErrorResponse($validator);
         }
 
         // Handle image upload if exists
@@ -90,7 +97,11 @@ class BlogPostController extends Controller
         $blogPost->content = $request->content;
         $blogPost->save(); // Explicitly save the blog post
 
-        return response()->json($blogPost, 200); // Return the updated blog post
+        return response()->json([
+            'statusCode' => 200,
+            'message' => 'Blog Post Successfully Updated',
+            'data' => $blogPost
+        ], 200); // Return the updated blog post
     }
 
     /**
@@ -104,10 +115,17 @@ class BlogPostController extends Controller
         $blogPost = BlogPost::find($id);
 
         if (!$blogPost) {
-            return response()->json(['error' => 'Blog post not found'], 404);
+            return response()->json([
+                'statusCode' => 404,
+                'message' => 'Blog post not found',
+            ], 404);
         }
 
-        return response()->json($blogPost, 200);
+        return response()->json([
+            'statusCode' => 200,
+            'message' => 'Blog Post Retrieved Successfully',
+            'data' => $blogPost
+        ], 200);
     }
 
     /**
@@ -125,7 +143,7 @@ class BlogPostController extends Controller
 
         // If validation fails, return error response
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->validationErrorResponse($validator);
         }
 
         // Search query based on provided title
@@ -137,7 +155,13 @@ class BlogPostController extends Controller
 
         $blogPosts = $query->paginate(10); // Return paginated results
 
-        return response()->json($blogPosts, 200);
+        // Convert pagination data to an array and merge with custom attributes
+        $response = array_merge($blogPosts->toArray(), [
+            'statusCode' => 200,
+            'message' => 'Blog Posts Retrieved Successfully',
+        ]);
+
+        return response()->json($response, 200);
     }
 
     /**
@@ -151,7 +175,10 @@ class BlogPostController extends Controller
         $blogPost = BlogPost::find($id);
 
         if (!$blogPost) {
-            return response()->json(['error' => 'Blog post not found'], 404);
+            return response()->json([
+                'statusCode' => 404,
+                'message' => 'Blog post not found',
+            ], 404);
         }
 
         // Delete the image file if it exists
@@ -162,6 +189,18 @@ class BlogPostController extends Controller
         // Delete the blog post
         $blogPost->delete();
 
-        return response()->json(['message' => 'Blog post deleted successfully'], 200);
+        return response()->json([
+            'statusCode' => 200,
+            'message' => 'Blog Post Successfully Deleted',
+            'data' => null
+        ], 200);
+    }
+
+    protected function validationErrorResponse($validator)
+    {
+        return response()->json([
+            'statusCode' => 422,
+            'message' => $validator->errors()->first(),
+        ], 422);
     }
 }

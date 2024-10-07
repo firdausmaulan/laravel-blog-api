@@ -27,7 +27,7 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->validationErrorResponse($validator);
         }
 
         // Handle image upload
@@ -39,9 +39,7 @@ class AuthController extends Controller
         // Handle location data
         $location = null;
         if ($request->filled('latitude') && $request->filled('longitude')) {
-            $longitude = $request->input('longitude');
-            $latitude = $request->input('latitude');
-            $location = new Point($longitude, $latitude);
+            $location = new Point($request->longitude, $request->latitude);
         }
 
         // Create the user
@@ -59,49 +57,65 @@ class AuthController extends Controller
         $token = Auth::login($user);
 
         return response()->json([
+            'statusCode' => 201,
             'message' => 'User registered successfully',
-            'user' => $user,
-            'token' => $token,
+            'data' => $this->prepareUserResponse($user, $token),
         ], 201);
     }
 
     // User login
     public function login(Request $request)
     {
+        // Validate the request data
         $validator = Validator::make($request->all(), [
             'email' => 'required|string|email',
             'password' => 'required|string',
         ]);
 
+        // Handle validation failure
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->validationErrorResponse($validator);
         }
 
+        // Attempt to authenticate and generate a token
         if (!$token = JWTAuth::attempt($request->only('email', 'password'))) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+            return response()->json([
+                'statusCode' => 401,
+                'message' => 'Invalid credentials',
+            ], 401);
         }
+
+        // Retrieve the authenticated user
+        $user = auth()->user();
 
         return response()->json([
-            'token' => $token,
-        ]);
+            'statusCode' => 200,
+            'message' => 'User registered successfully',
+            'data' => $this->prepareUserResponse($user, $token),
+        ], 200);
     }
 
     // User logout
     public function logout()
     {
         Auth::logout();
-        return response()->json(['message' => 'Successfully logged out']);
+        return response()->json([
+            'statusCode' => 200,
+            'message' => 'Successfully logged out',
+        ], 200);
     }
 
     // Update user profile
-    // PUT in laravel using POST with suffix ?_method=PUT
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
 
         // Check if the authenticated user is allowed to update this user
         if (Auth::user()->role !== 'admin' && Auth::id() !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json([
+                'statusCode' => 403,
+                'message' => 'Unauthorized',
+            ], 403);
         }
 
         // Validate the request data
@@ -117,48 +131,27 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->validationErrorResponse($validator);
         }
 
         // Update user fields
-        if ($request->has('name')) {
-            $user->name = $request->input('name');
-        }
-
-        if ($request->has('email')) {
-            $user->email = $request->input('email');
-        }
-
-        if ($request->has('password')) {
-            $user->password = Hash::make($request->input('password'));
-        }
-
-        if ($request->has('role')) {
-            $user->role = $request->input('role');
-        }
-
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('images', 'public');
-            $user->image = $imagePath;
-        }
-
-        if ($request->has('address')) {
-            $user->address = $request->input('address');
-        }
-
-        // Handle location data
+        if ($request->has('name')) $user->name = $request->name;
+        if ($request->has('email')) $user->email = $request->email;
+        if ($request->has('password')) $user->password = Hash::make($request->password);
+        if ($request->has('role')) $user->role = $request->role;
+        if ($request->hasFile('image')) $user->image = $request->file('image')->store('images', 'public');
+        if ($request->has('address')) $user->address = $request->address;
         if ($request->filled('latitude') && $request->filled('longitude')) {
-            $longitude = $request->input('longitude');
-            $latitude = $request->input('latitude');
-            $user->location = new Point($longitude, $latitude);
+            $user->location = new Point($request->longitude, $request->latitude);
         }
 
         // Save updated user data
         $user->save();
 
         return response()->json([
-            'message' => 'User updated successfully',
-            'user' => $user,
+            'statusCode' => 200,
+            'message' => 'User registered successfully',
+            'data' => $this->prepareUserResponse($user),
         ], 200);
     }
 
@@ -169,10 +162,17 @@ class AuthController extends Controller
 
         // Check if the authenticated user is allowed to see this user's details
         if (Auth::user()->role !== 'admin' && Auth::id() !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json([
+                'statusCode' => 403,
+                'message' => 'Unauthorized',
+            ], 403);
         }
 
-        return response()->json($user);
+        return response()->json([
+            'statusCode' => 200,
+            'message' => 'User registered successfully',
+            'data' => $this->prepareUserResponse($user),
+        ], 200);
     }
 
     // Search for users
@@ -185,20 +185,18 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return $this->validationErrorResponse($validator);
         }
 
-        // Get the search query and role from the request
+        // Build the search query
         $query = $request->input('query');
         $role = $request->input('role');
 
-        // Start building the query
         $users = User::query();
-
         if ($query) {
             $users->where(function ($q) use ($query) {
                 $q->where('name', 'like', "%$query%")
-                    ->orWhere('email', 'like', "%$query%");
+                  ->orWhere('email', 'like', "%$query%");
             });
         }
 
@@ -206,6 +204,52 @@ class AuthController extends Controller
             $users->where('role', $role);
         }
 
-        return response()->json($users->get());
+        $result = $users->get();
+
+        // Map the results to include latitude and longitude at the same level
+        $formattedResult = $result->map(function ($user) {
+            return $this->prepareUserResponse($user);
+        });
+
+        return response()->json([
+            'statusCode' => 200,
+            'message' => 'Users retrieved successfully',
+            'data' => $formattedResult,
+        ], 200);
+    }
+
+    protected function validationErrorResponse($validator)
+    {
+        return response()->json([
+            'statusCode' => 422,
+            'message' => $validator->errors()->first(),
+        ], 422);
+    }
+
+    protected function prepareUserResponse(User $user, $token = null)
+    {
+        // Extract latitude and longitude from location
+        $latitude = $longitude = null;
+        if ($user->location) {
+            $arrayUserLocation = $user->location->toArray();
+            $latitude = $arrayUserLocation['coordinates'][0];
+            $longitude = $arrayUserLocation['coordinates'][1];
+        }
+
+        // Make the 'location' field hidden
+        $user->makeHidden(['location']);
+
+        if ($token == null) {
+            return array_merge($user->toArray(), [
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+            ]);
+        } else {
+            return array_merge($user->toArray(), [
+                'token' => $token,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+            ]);
+        }
     }
 }

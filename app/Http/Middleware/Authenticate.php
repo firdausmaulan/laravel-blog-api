@@ -24,7 +24,8 @@ class Authenticate extends Middleware
     {
         // Always return a JSON response for unauthenticated requests
         throw new HttpResponseException(response()->json([
-            'error' => 'Unauthenticated.'
+            'statusCode' => 401,
+            'message' => 'Unauthenticated.'
         ], 401));
     }
 }
