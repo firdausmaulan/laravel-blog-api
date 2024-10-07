@@ -90,7 +90,7 @@ class AuthController extends Controller
 
         return response()->json([
             'statusCode' => 200,
-            'message' => 'User registered successfully',
+            'message' => 'User login successfully',
             'data' => $this->prepareUserResponse($user, $token),
         ], 200);
     }
@@ -150,7 +150,7 @@ class AuthController extends Controller
 
         return response()->json([
             'statusCode' => 200,
-            'message' => 'User registered successfully',
+            'message' => 'User updated successfully',
             'data' => $this->prepareUserResponse($user),
         ], 200);
     }
@@ -170,7 +170,7 @@ class AuthController extends Controller
 
         return response()->json([
             'statusCode' => 200,
-            'message' => 'User registered successfully',
+            'message' => 'User retrieved successfully',
             'data' => $this->prepareUserResponse($user),
         ], 200);
     }
