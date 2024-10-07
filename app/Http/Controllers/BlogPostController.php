@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\BlogPost;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class BlogPostController extends Controller
 {
@@ -17,12 +18,17 @@ class BlogPostController extends Controller
      */
     public function create(Request $request)
     {
-        // Validate the incoming request
-        $validatedData = $request->validate([
+        // Validate the incoming request using Validator::make
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'content' => 'required',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048', // Validate image
         ]);
+
+        // If validation fails, return error response
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
         // Handle image upload
         $imagePath = null;
@@ -31,12 +37,12 @@ class BlogPostController extends Controller
         }
 
         // Create a new blog post
-        $blogPost = BlogPost::create([
-            'title' => $validatedData['title'],
-            'content' => $validatedData['content'],
-            'image' => $imagePath,
-            'user_id' => Auth::id(), // Associate blog post with the authenticated user
-        ]);
+        $blogPost = new BlogPost();
+        $blogPost->title = $request->title;
+        $blogPost->content = $request->content;
+        $blogPost->image = $imagePath;
+        $blogPost->user_id = Auth::id(); // Associate blog post with the authenticated user
+        $blogPost->save();
 
         return response()->json($blogPost, 201); // Return the newly created blog post
     }
@@ -48,7 +54,6 @@ class BlogPostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    // PUT in laravel using POST with suffix ?_method=PUT
     public function update(Request $request, $id)
     {
         $blogPost = BlogPost::find($id);
@@ -57,12 +62,17 @@ class BlogPostController extends Controller
             return response()->json(['error' => 'Blog post not found'], 404);
         }
 
-        // Validate the incoming request
-        $validatedData = $request->validate([
+        // Validate the incoming request using Validator::make
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'content' => 'required',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048', // Validate image
         ]);
+
+        // If validation fails, return error response
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
         // Handle image upload if exists
         if ($request->hasFile('image')) {
@@ -76,7 +86,9 @@ class BlogPostController extends Controller
         }
 
         // Update blog post with request data
-        $blogPost->update($validatedData);
+        $blogPost->title = $request->title;
+        $blogPost->content = $request->content;
+        $blogPost->save(); // Explicitly save the blog post
 
         return response()->json($blogPost, 200); // Return the updated blog post
     }
@@ -107,9 +119,14 @@ class BlogPostController extends Controller
     public function search(Request $request)
     {
         // Validate search query
-        $validatedData = $request->validate([
+        $validator = Validator::make($request->all(), [
             'title' => 'nullable|string',
         ]);
+
+        // If validation fails, return error response
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
         // Search query based on provided title
         $query = BlogPost::query();
