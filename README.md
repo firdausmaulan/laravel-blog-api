@@ -1,9 +1,14 @@
 # What I learn from this project
-
-https://firdausmaulana.blogspot.com/2024/10/laravel-blog.html
+- Create laravel project
+- Create migration for table user and bog post
+- t_user (id, name, email, password, role, image address, location (LatLng), created_at, updated_at)
+- t_blog_post (id, title, content, image)
+- Build CRUD REST API
+- Implement JWT Auth
+- Run project on localhost and shared hosting
+- https://firdausmaulana.blogspot.com/2024/10/laravel-blog.html
 
 # Note :
-- I forgot to change some response message
 - Use POST with suffix ?_method=PUT when updating data
 
 # Result
