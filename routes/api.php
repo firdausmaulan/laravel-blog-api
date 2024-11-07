@@ -25,9 +25,12 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('user/{id}', [AuthController::class, 'destroy']); // delete user
 });
 
-Route::middleware('auth:api')->group(function () {
+Route::group([], function () {
     Route::get('posts', [BlogPostController::class, 'search']); // list posts with pagination and search
     Route::get('post/{id}', [BlogPostController::class, 'detail']); // show a single post
+});
+
+Route::middleware('auth:api')->group(function () {
     Route::post('post', [BlogPostController::class, 'create']); // create a new post
     Route::put('post/{id}', [BlogPostController::class, 'update']); // update post
     Route::delete('post/{id}', [BlogPostController::class, 'destroy']); // delete post
