@@ -161,12 +161,12 @@ class AuthController extends Controller
         $user = User::findOrFail($id);
 
         // Check if the authenticated user is allowed to see this user's details
-        if (Auth::user()->role !== 'admin' && Auth::id() !== $user->id) {
-            return response()->json([
-                'statusCode' => 403,
-                'message' => 'Unauthorized',
-            ], 403);
-        }
+        // if (Auth::user()->role !== 'admin' && Auth::id() !== $user->id) {
+        //    return response()->json([
+        //        'statusCode' => 403,
+        //        'message' => 'Unauthorized',
+        //    ], 403);
+        // }
 
         return response()->json([
             'statusCode' => 200,
