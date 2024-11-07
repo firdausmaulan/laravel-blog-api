@@ -16,13 +16,16 @@ use App\Http\Controllers\BlogPostController;
 |
 */
 
-Route::post('register', [AuthController::class, 'register']);
-Route::post('login', [AuthController::class, 'login']);
-Route::middleware('auth:api')->group(function () {
-    Route::get('users', [AuthController::class, 'search']); // list users with pagination and search
-    Route::get('user/{id}', [AuthController::class, 'detail']); // show user details
-    Route::put('user/{id}', [AuthController::class, 'update']); // update user
-    Route::delete('user/{id}', [AuthController::class, 'destroy']); // delete user
+Route::group([], function () {
+    Route::post('register', [AuthController::class, 'register']);
+    Route::post('login', [AuthController::class, 'login']);
+    Route::get('users', [AuthController::class, 'search']);
+    Route::get('user/{id}', [AuthController::class, 'detail']);
+});
+
+Route::group(['middleware' => 'auth:api'], function () {
+    Route::put('user/{id}', [AuthController::class, 'update']);
+    Route::delete('user/{id}', [AuthController::class, 'destroy']);
 });
 
 Route::group([], function () {
